@@ -1,0 +1,361 @@
+---
+interface Props {
+  items: Array<{
+    slug: string;
+    data: {
+      published: Date;
+      title: string;
+    };
+  }>;
+}
+
+const { items } = Astro.props;
+
+// 获取所有说说的年份范围
+const allYears = [...new Set(items.map(item => item.data.published.getFullYear()))].sort((a, b) => b - a);
+const now = new Date();
+const defaultYear = allYears.length > 0 ? allYears[0] : now.getFullYear();
+const defaultMonth = now.getMonth();
+
+const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+---
+
+<div class="life-calendar">
+  <div class="calendar-header">
+    <div class="calendar-controls">
+      <select id="year-select" class="year-select">
+        {allYears.map(year => (
+          <option value={year} selected={year === defaultYear}>{year}年</option>
+        ))}
+      </select>
+      <select id="month-select" class="month-select">
+        {monthNames.map((month, index) => (
+          <option value={index} selected={index === defaultMonth}>{month}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+  
+  <div class="calendar-weekdays">
+    <div class="weekday">日</div>
+    <div class="weekday">一</div>
+    <div class="weekday">二</div>
+    <div class="weekday">三</div>
+    <div class="weekday">四</div>
+    <div class="weekday">五</div>
+    <div class="weekday">六</div>
+  </div>
+  
+  <div id="calendar-grid" class="calendar-grid">
+    <!-- 日历内容将通过JavaScript生成 -->
+  </div>
+  
+  <div id="day-posts" class="day-posts hidden">
+    <div class="posts-header">
+      <h4 class="posts-title"></h4>
+      <button class="close-btn">&times;</button>
+    </div>
+    <div class="posts-list"></div>
+  </div>
+</div>
+
+<style>
+.life-calendar {
+  background: var(--card-bg);
+  border-radius: var(--radius-large);
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 2rem;
+}
+
+.calendar-header {
+  margin-bottom: 1rem;
+}
+
+.calendar-controls {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.year-select,
+.month-select {
+  background: var(--card-bg-secondary, rgba(0,0,0,0.05));
+  border: 1px solid var(--line-divider);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.calendar-day.other-month {
+  opacity: 0.3;
+}
+
+.calendar-day.has-post {
+  background: var(--primary);
+  color: white;
+}
+
+.calendar-day.has-post:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.day-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+}
+
+.post-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: rgba(255,255,255,0.9);
+  color: var(--primary);
+  font-size: 0.625rem;
+  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-number {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.day-posts {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line-divider);
+  padding-top: 1rem;
+}
+
+.day-posts.hidden {
+  display: none;
+}
+
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.posts-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.post-item {
+  display: block;
+  padding: 0.5rem;
+  background: var(--card-bg-secondary, rgba(0,0,0,0.05));
+  border-radius: 0.375rem;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  transition: background 0.2s ease;
+}
+
+.post-item:hover {
+  background: var(--card-bg-hover, rgba(0,0,0,0.1));
+}
+
+@media (max-width: 1024px) {
+  .life-calendar {
+    position: static;
+    margin-bottom: 2rem;
+  }
+}
+</style>
+
+<script>
+window.lifeCalendarData = {
+  items: JSON.parse(`{JSON.stringify(items.map(item => ({
+    slug: item.slug,
+    data: {
+      title: item.data.title,
+      published: item.data.published.toISOString()
+    }
+  })))}`)
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  const yearSelect = document.getElementById('year-select');
+  const monthSelect = document.getElementById('month-select');
+  const calendarGrid = document.getElementById('calendar-grid');
+  const dayPosts = document.getElementById('day-posts');
+  const postsTitle = dayPosts?.querySelector('.posts-title');
+  const postsList = dayPosts?.querySelector('.posts-list');
+  const closeBtn = dayPosts?.querySelector('.close-btn');
+  
+  const items = window.lifeCalendarData.items;
+  
+  function createDateMap() {
+    const dateMap = new Map();
+    items.forEach(item => {
+      const dateStr = item.data.published.split('T')[0];
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, []);
+      }
+      dateMap.get(dateStr).push(item);
+    });
+    return dateMap;
+  }
+  
+  function generateCalendar(year, month) {
+    const dateMap = createDateMap();
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    const current = new Date(startDate);
+    
+    for (let i = 0; i < 42; i++) {
+      const dateStr = current.toISOString().split('T')[0];
+      const hasPost = dateMap.has(dateStr);
+      const isCurrentMonth = current.getMonth() === month;
+      
+      days.push({
+        dateStr,
+        day: current.getDate(),
+        hasPost,
+        isCurrentMonth,
+        posts: hasPost ? dateMap.get(dateStr) : []
+      });
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return days;
+  }
+  
+  function renderCalendar() {
+    const year = parseInt(yearSelect.value);
+    const month = parseInt(monthSelect.value);
+    const days = generateCalendar(year, month);
+    
+    calendarGrid.innerHTML = days.map(day => {
+      const classes = ['calendar-day'];
+      if (!day.isCurrentMonth) classes.push('other-month');
+      if (day.hasPost) classes.push('has-post');
+      
+      if (day.hasPost) {
+        const countBadge = day.posts.length > 1 ? `<span class="post-count">${day.posts.length}</span>` : '';
+        return `
+          <div class="${classes.join(' ')}">
+            <button class="day-button" onclick="handleDayClick('${day.dateStr}', ${JSON.stringify(day.posts).replace(/"/g, '&quot;')})">
+              ${day.day}
+              ${countBadge}
+            </button>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="${classes.join(' ')}">
+            <span class="day-number">${day.day}</span>
+          </div>
+        `;
+      }
+    }).join('');
+  }
+  
+  window.handleDayClick = function(dateStr, posts) {
+    if (posts.length === 1) {
+      window.location.href = `/life/${posts[0].slug}/`;
+      return;
+    }
+    
+    const date = new Date(dateStr);
+    const dateText = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    postsTitle.textContent = dateText;
+    
+    postsList.innerHTML = '';
+    posts.forEach(post => {
+      const postItem = document.createElement('a');
+      postItem.className = 'post-item';
+      postItem.href = `/life/${post.slug}/`;
+      postItem.textContent = post.data.title;
+      postsList.appendChild(postItem);
+    });
+    
+    dayPosts.classList.remove('hidden');
+  };
+  
+  yearSelect?.addEventListener('change', renderCalendar);
+  monthSelect?.addEventListener('change', renderCalendar);
+  closeBtn?.addEventListener('click', function() {
+    dayPosts.classList.add('hidden');
+  });
+  
+  renderCalendar();
+});
+</script>

@@ -1,0 +1,247 @@
+
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Timeline from "@components/Timeline.astro";
+import { getRawSortedLife } from "@utils/content-utils";
+
+let lifeList;
+try {
+  lifeList = await getRawSortedLife();
+} catch (error) {
+  console.error('Error loading life content:', error);
+  lifeList = [];
+}
+
+// 获取最早和最新日期
+const dates = lifeList.map(item => item.data.published);
+const minDate = dates.length > 0 ? new Date(Math.min(...dates)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+const maxDate = new Date().toISOString().split('T')[0];
+---
+
+<MainGridLayout title="Life" headings={[]}>
+  {lifeList.length === 0 ? (
+    <p class="text-center text-lg text-black/40 dark:text-white/40 mt-8">暂无生活记录。</p>
+  ) : (
+    <div>
+      <div class="search-container">
+        <input type="date" id="date-search" class="date-input text-black dark:text-white" min={minDate} max={maxDate} placeholder="搜索指定日期的说说">
+        <div class="button-group">
+          <button id="search-btn" class="search-btn" onclick="performLifeSearch()">搜索</button>
+          <button id="clear-btn" class="clear-btn text-black dark:text-white" onclick="clearLifeSearch()">清除</button>
+        </div>
+      </div>
+      <div id="search-results" class="search-results hidden"></div>
+      <Timeline items={lifeList} />
+    </div>
+  )}
+</MainGridLayout>
+
+<style>
+.search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  align-items: flex-end;
+  margin-left: auto;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.date-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.5rem;
+  background: var(--card-bg);
+  font-size: 0.875rem;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+
+:global(.dark) .date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.search-btn, .clear-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.search-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.search-btn:hover {
+  opacity: 0.9;
+}
+
+.clear-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--line-divider);
+}
+
+.clear-btn:hover {
+  background: var(--card-bg-secondary, rgba(0,0,0,0.1));
+}
+
+.search-results {
+  background: var(--card-bg);
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.search-results.hidden {
+  display: none;
+}
+
+.search-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.empty-result {
+  text-align: center;
+  padding: 2rem;
+  background: var(--card-bg-secondary, #f9fafb);
+  border: 2px dashed var(--line-divider);
+  border-radius: 8px;
+}
+
+.empty-result p {
+  font-style: italic;
+  margin: 0;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.result-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--line-divider);
+  border-left: 4px solid var(--primary);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.result-item::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-divider), transparent);
+}
+
+.result-item:last-child::after {
+  display: none;
+}
+
+.result-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: var(--primary);
+}
+
+.item-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary)));
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.item-content {
+  flex: 1;
+}
+
+.item-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+  transition: color 0.2s ease;
+}
+
+.item-link:hover .item-title {
+  color: var(--primary);
+}
+
+.item-date {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary, #6b7280);
+  background: var(--card-bg-secondary, rgba(0,0,0,0.05));
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .search-container {
+    align-items: stretch;
+  }
+  
+  .date-input {
+    width: 100%;
+  }
+  
+  .button-group {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .search-btn, .clear-btn {
+    flex: 1;
+    max-width: 120px;
+  }
+}
+</style>
+
+
+
+
+
+

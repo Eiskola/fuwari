@@ -1,0 +1,106 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import ImageWrapper from "@components/misc/ImageWrapper.astro";
+import Markdown from "@components/misc/Markdown.astro";
+import { getCollection } from "astro:content";
+import LifeMeta from "@components/LifeMeta.astro";
+import { formatDateToYYYYMMDD } from "@utils/date-utils";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { Icon } from "astro-icon/components";
+
+export async function getStaticPaths() {
+  const lifeList = await getCollection("life");
+  return lifeList.map(item => ({
+    params: { slug: item.slug }
+  }));
+}
+
+const { slug } = Astro.params;
+const lifeList = await getCollection("life");
+const life = lifeList.find((item) => item.slug === slug);
+if (!life) throw new Error("未找到该生活记录");
+const imageSrc = life.data.image || "";
+const { Content, remarkPluginFrontmatter } = await life.render();
+---
+
+<MainGridLayout title={life.data.title} headings={[]}>
+  <article class="life-detail-card">
+    <!-- 字数统计和阅读时间 -->
+    <div class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation">
+      <div class="flex flex-row items-center">
+        <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
+          <Icon name="material-symbols:notes-rounded" /> 
+        </div>
+        <div class="text-sm">{remarkPluginFrontmatter.words} {" " + i18n(I18nKey.wordsCount)}</div>
+      </div>
+      <div class="flex flex-row items-center">
+        <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
+          <Icon name="material-symbols:schedule-outline-rounded" />
+        </div>
+        <div class="text-sm">
+          {remarkPluginFrontmatter.minutes} {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
+        </div>
+      </div>
+    </div>
+
+    <!-- 标题和日期：仅保留日期 -->
+    <div class="life-detail-meta">
+      <h1 class="life-detail-title text-black dark:text-white">{life.data.title}</h1>
+      <LifeMeta
+        class="mt-2"
+        published={life.data.published}
+        hideUpdateDate={true}
+      />
+    </div>
+    
+    <!-- 封面图片 -->
+    {imageSrc && (
+      <ImageWrapper id="life-cover" src={imageSrc} basePath={`content/life/${slug.includes('/') ? slug.split('/')[0] + '/' : ''}`} alt="封面" class="mb-8 rounded-xl banner-container onload-animation" />
+    )}
+
+    <!-- 正文内容 -->
+    <div class="life-detail-body text-black dark:text-white">
+      <Markdown>
+        <Content />
+      </Markdown>
+    </div>
+  </article>
+</MainGridLayout>
+
+<!-- 样式区域 -->
+<style>
+.life-detail-card {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 2rem auto;
+}
+.life-detail-image {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 0.75rem;
+}
+.life-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.life-detail-title {
+  font-size: 2rem;
+  font-weight: 700;
+}
+.life-detail-date {
+  font-size: 1rem;
+}
+.life-detail-body {
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+</style>

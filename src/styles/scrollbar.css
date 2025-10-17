@@ -1,0 +1,87 @@
+.scrollbar-base.os-scrollbar {
+    @apply transition-all duration-300 ease-in-out;
+    pointer-events: unset;
+    @apply opacity-70 hover:opacity-100;
+
+    .os-scrollbar-track {
+        @apply rounded-full bg-opacity-10 transition-colors duration-300;
+    }
+
+    .os-scrollbar-handle {
+        @apply rounded-full transition-all duration-300 transform hover:scale-x-105 hover:scale-y-105;
+        @apply shadow-[0_0_6px_rgba(255,255,255,0.5)] hover:shadow-[0_0_8px_rgba(255,255,255,0.7)];
+    }
+
+    &.os-scrollbar-horizontal {
+        @apply py-1 px-2 h-5;
+        
+        .os-scrollbar-track {
+            @apply h-2 mx-auto;
+        }
+        
+        .os-scrollbar-handle {
+            @apply h-1.5 w-16;
+        }
+        
+        &:hover .os-scrollbar-handle {
+            @apply h-2.5;
+        }
+
+        &:active .os-scrollbar-handle {
+            @apply h-3 scale-x-110;
+        }
+    }
+
+    &.os-scrollbar-vertical {
+        @apply px-1 py-2 w-5;
+        
+        .os-scrollbar-track {
+            @apply w-2 my-auto;
+        }
+        
+        .os-scrollbar-handle {
+            @apply w-1.5 h-16;
+        }
+        
+        &:hover .os-scrollbar-handle {
+            @apply w-2.5;
+        }
+
+        &:active .os-scrollbar-handle {
+            @apply w-3 scale-y-110;
+        }
+    }
+}
+
+.os-scrollbar {
+    /* 青春系主题色：明亮马卡龙色调，主色用薄荷绿/浅粉/天蓝色系 */
+    &.scrollbar-auto {
+        --os-handle-bg: var(--scrollbar-bg, rgba(108, 214, 203, 0.6)); /* 薄荷绿 */
+        --os-handle-bg-hover: var(--scrollbar-bg-hover, rgba(85, 204, 190, 0.8));
+        --os-handle-bg-active: var(--scrollbar-bg-active, rgba(65, 180, 167, 1));
+        --os-track-bg: var(--scrollbar-track-bg, rgba(108, 214, 203, 0.15));
+        --os-track-bg-hover: var(--scrollbar-track-bg-hover, rgba(108, 214, 203, 0.25));
+    }
+    &.scrollbar-dark {
+        --os-handle-bg: var(--scrollbar-bg-dark, rgba(248, 177, 205, 0.6)); /* 浅粉色 */
+        --os-handle-bg-hover: var(--scrollbar-bg-hover-dark, rgba(245, 154, 188, 0.8));
+        --os-handle-bg-active: var(--scrollbar-bg-active-dark, rgba(242, 130, 171, 1));
+        --os-track-bg: var(--scrollbar-track-bg-dark, rgba(248, 177, 205, 0.15));
+        --os-track-bg-hover: var(--scrollbar-track-bg-hover-dark, rgba(248, 177, 205, 0.25));
+    }
+    &.scrollbar-light {
+        --os-handle-bg: var(--scrollbar-bg-light, rgba(135, 206, 250, 0.6)); /* 天蓝色 */
+        --os-handle-bg-hover: var(--scrollbar-bg-hover-light, rgba(100, 181, 246, 0.8));
+        --os-handle-bg-active: var(--scrollbar-bg-active-light, rgba(66, 165, 245, 1));
+        --os-track-bg: var(--scrollbar-track-bg-light, rgba(135, 206, 250, 0.15));
+        --os-track-bg-hover: var(--scrollbar-track-bg-hover-light, rgba(135, 206, 250, 0.25));
+    }
+
+    .os-scrollbar-track {
+        @apply bg-[var(--os-track-bg)] hover:bg-[var(--os-track-bg-hover)];
+    }
+
+    .os-scrollbar-handle {
+        @apply bg-[var(--os-handle-bg)] hover:bg-[var(--os-handle-bg-hover)] active:bg-[var(--os-handle-bg-active)];
+    }
+}

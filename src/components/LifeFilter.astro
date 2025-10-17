@@ -1,0 +1,179 @@
+---
+interface Props {
+  items: Array<{
+    slug: string;
+    data: {
+      published: Date;
+      title: string;
+    };
+  }>;
+}
+
+const { items } = Astro.props;
+
+// 获取所有说说的年份范围
+const allYears = [...new Set(items.map(item => item.data.published.getFullYear()))].sort((a, b) => b - a);
+const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+---
+
+<div class="life-filter">
+  <div class="filter-header">
+    <h3 class="filter-title">筛选说说</h3>
+  </div>
+  
+  <div class="filter-controls">
+    <div class="control-group">
+      <label for="year-filter" class="control-label">年份</label>
+      <select id="year-filter" class="filter-select">
+        <option value="">全部年份</option>
+        {allYears.map(year => (
+          <option value={year}>{year}年</option>
+        ))}
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label for="month-filter" class="control-label">月份</label>
+      <select id="month-filter" class="filter-select">
+        <option value="">全部月份</option>
+        {monthNames.map((month, index) => (
+          <option value={index + 1}>{month}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+  
+  <button id="reset-filter" class="reset-btn">重置筛选</button>
+</div>
+
+<style>
+.life-filter {
+  background: var(--card-bg);
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 2rem;
+}
+
+.filter-header {
+  margin-bottom: 1.5rem;
+}
+
+.filter-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+  text-align: center;
+}
+
+.filter-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.filter-select {
+  background: var(--card-bg-secondary, rgba(0,0,0,0.05));
+  border: 1px solid var(--line-divider);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.reset-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.reset-btn:hover {
+  background: var(--primary-dark, var(--primary));
+  opacity: 0.9;
+}
+
+@media (max-width: 1024px) {
+  .life-filter {
+    position: static;
+    margin-bottom: 2rem;
+  }
+  
+  .filter-controls {
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  .control-group {
+    flex: 1;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const yearFilter = document.getElementById('year-filter');
+  const monthFilter = document.getElementById('month-filter');
+  const resetBtn = document.getElementById('reset-filter');
+  
+  function applyFilter() {
+    const selectedYear = yearFilter.value;
+    const selectedMonth = monthFilter.value;
+    
+    // 构建查询参数
+    const params = new URLSearchParams();
+    if (selectedYear) params.set('year', selectedYear);
+    if (selectedMonth) params.set('month', selectedMonth);
+    
+    // 更新URL
+    const newUrl = params.toString() ? 
+      `${window.location.pathname}?${params.toString()}` : 
+      window.location.pathname;
+    
+    window.location.href = newUrl;
+  }
+  
+  function resetFilter() {
+    window.location.href = window.location.pathname;
+  }
+  
+  // 从URL读取当前筛选状态
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentYear = urlParams.get('year');
+  const currentMonth = urlParams.get('month');
+  
+  if (currentYear) yearFilter.value = currentYear;
+  if (currentMonth) monthFilter.value = currentMonth;
+  
+  // 绑定事件
+  yearFilter.addEventListener('change', applyFilter);
+  monthFilter.addEventListener('change', applyFilter);
+  resetBtn.addEventListener('click', resetFilter);
+});
+</script>

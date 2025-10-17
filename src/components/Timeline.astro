@@ -1,0 +1,601 @@
+---
+import ImageWrapper from "@components/misc/ImageWrapper.astro";
+
+interface Props {
+  items: Array<{
+    slug: string;
+    data: {
+      title: string;
+      published: Date;
+      image?: string;
+      body: string;
+    };
+  }>;
+}
+
+const { items } = Astro.props;
+
+// 按年份和月份分组
+const groupedByYear = new Map();
+items.forEach(item => {
+  const year = item.data.published.getFullYear();
+  const month = item.data.published.getMonth();
+  
+  if (!groupedByYear.has(year)) {
+    groupedByYear.set(year, new Map());
+  }
+  
+  if (!groupedByYear.get(year).has(month)) {
+    groupedByYear.get(year).set(month, []);
+  }
+  
+  groupedByYear.get(year).get(month).push(item);
+});
+
+// 转换为数组并排序
+const yearGroups = Array.from(groupedByYear.entries())
+  .sort(([a], [b]) => b - a) // 年份倒序
+  .map(([year, monthMap]) => ({
+    year,
+    months: Array.from(monthMap.entries())
+      .sort(([a], [b]) => b - a) // 月份倒序
+      .map(([month, posts]) => ({
+        month,
+        posts: posts.sort((a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime())
+      }))
+  }));
+
+const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+---
+
+<div class="timeline-container">
+  {yearGroups.map((yearGroup, yearIndex) => {
+    const isCurrentYear = yearGroup.year === new Date().getFullYear();
+    return (
+    <div class="year-section">
+      <!-- 年份标识 -->
+      <div class="year-marker">
+        <div class="year-line">
+          <div class="year-dot"></div>
+        </div>
+        <button class="year-label collapsed-year" data-year={yearGroup.year} onclick="window.handleTimelineClick(event)">
+          {yearGroup.year}
+          <span class="expand-icon">{isCurrentYear ? '▲' : '▼'}</span>
+        </button>
+      </div>
+      
+      <!-- 月份列表 -->
+      <div class={`months-container ${isCurrentYear ? '' : 'hidden'}`}>
+        {yearGroup.months.map((monthGroup, monthIndex) => {
+          const showCount = 1;
+          const visiblePosts = monthGroup.posts.slice(0, showCount);
+          const hiddenPosts = monthGroup.posts.slice(showCount);
+          
+          return (
+          <div class="month-section" data-month-id={`${yearGroup.year}-${monthGroup.month}`}>
+            <!-- 月份标识 -->
+            <div class="month-marker">
+              <div class="month-line">
+                <div class="month-dot"></div>
+              </div>
+              <div class="month-label">
+                {monthNames[monthGroup.month]}
+                <span class="post-count-badge">{monthGroup.posts.length}</span>
+              </div>
+            </div>
+            
+            <!-- 显示默认说说 -->
+            <div class="posts-container" data-visible-count={visiblePosts.length} data-total-count={monthGroup.posts.length}>
+              {visiblePosts.map((post, postIndex) => (
+                <div class="timeline-item">
+                  <div class="timeline-line">
+                    <div class="timeline-dot"></div>
+                  </div>
+                  
+                  <div class="timeline-content">
+                    <a href={`/life/${post.slug}/`} class="timeline-card">
+                      <div class="card-main">
+                        <div class="card-left">
+                          <h3 class="timeline-title text-black dark:text-white">{post.data.title}</h3>
+                          <time class="timeline-date text-black/60 dark:text-white/60">{post.data.published.toLocaleDateString()}</time>
+                        </div>
+                        
+                        {post.data.image && (
+                          <div class="timeline-image">
+                            <ImageWrapper src={post.data.image} basePath={`content/life/${post.slug.includes('/') ? post.slug.split('/')[0] + '/' : ''}`} alt="封面" class="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <!-- 折叠的其他说说 -->
+            {hiddenPosts.length > 0 && (
+              <div class="collapsed-posts">
+                <div class="expand-posts-container">
+                  <button class="expand-btn" data-month={`${yearGroup.year}-${monthGroup.month}`} onclick="window.handleTimelineClick(event)">
+                    <span class="expand-text">查看更多 ({hiddenPosts.length})</span>
+                    <span class="expand-icon">▼</span>
+                  </button>
+                </div>
+                <div class="expanded-posts hidden">
+                  {hiddenPosts.map((post, hiddenIndex) => (
+                    <div class="timeline-item">
+                      <div class="timeline-line">
+                        <div class="timeline-dot"></div>
+                      </div>
+                      
+                      <div class="timeline-content">
+                        <a href={`/life/${post.slug}/`} class="timeline-card">
+                          <div class="card-main">
+                            <div class="card-left">
+                              <h3 class="timeline-title text-black dark:text-white">{post.data.title}</h3>
+                              <time class="timeline-date text-black/60 dark:text-white/60">{post.data.published.toLocaleDateString()}</time>
+                            </div>
+                            
+                            {post.data.image && (
+                              <div class="timeline-image">
+                                <ImageWrapper src={post.data.image} basePath={`content/life/${post.slug.includes('/') ? post.slug.split('/')[0] + '/' : ''}`} alt="封面" class="w-full h-full object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          );
+        })}
+      </div>
+    </div>
+    );
+  })}
+</div>
+
+<style>
+.timeline-container {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.year-section {
+  margin-bottom: 4rem;
+  position: relative;
+}
+
+.year-section:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: -2rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--primary), transparent);
+  opacity: 0.2;
+}
+
+.year-marker {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.year-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2rem;
+  position: relative;
+}
+
+.year-dot {
+  width: 24px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 4px solid var(--card-bg);
+  box-shadow: 0 0 0 2px var(--primary);
+  z-index: 2;
+  position: relative;
+}
+
+.year-dot::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(to bottom, var(--primary), transparent);
+  z-index: 1;
+}
+
+
+
+
+
+.year-label {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--card-bg);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  border: 2px solid var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.year-label:hover {
+  background: var(--primary);
+  color: white;
+}
+
+
+
+.months-container.hidden {
+  display: none;
+}
+
+.months-container {
+  margin-left: 2rem;
+}
+
+.month-section {
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.month-section:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: -1.25rem;
+  left: 2rem;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--primary), transparent);
+  opacity: 0.15;
+}
+
+.month-marker {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.month-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2rem;
+  position: relative;
+}
+
+.month-dot {
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 3px solid var(--card-bg);
+  box-shadow: 0 0 0 2px var(--primary);
+  opacity: 0.9;
+  z-index: 2;
+  position: relative;
+}
+
+.month-dot::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 45px;
+  background: linear-gradient(to bottom, var(--primary), transparent);
+  opacity: 0.7;
+  z-index: 1;
+}
+
+.month-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--card-bg);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--primary);
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.post-count-badge {
+  background: var(--primary);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+}
+
+.timeline-item {
+  display: flex;
+  margin-bottom: 1.5rem;
+  position: relative;
+  margin-left: 2rem;
+}
+
+.timeline-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2rem;
+  position: relative;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid var(--card-bg);
+  box-shadow: 0 0 0 2px var(--primary);
+  z-index: 2;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.timeline-item:not(:last-child) .timeline-dot::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 36px;
+  background: linear-gradient(to bottom, var(--primary), transparent);
+  opacity: 0.4;
+  z-index: 1;
+}
+
+.timeline-content {
+  flex: 1;
+  margin-top: -8px;
+}
+
+.timeline-card {
+  display: block;
+  background: var(--card-bg);
+  border-radius: var(--radius-large);
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+
+.timeline-card::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 20px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid var(--card-bg);
+}
+
+.timeline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.card-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timeline-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.timeline-date {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.timeline-image {
+  width: 240px;
+  height: 135px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.collapsed-posts {
+  margin-bottom: 0;
+}
+
+.expand-posts-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 4rem;
+  margin-bottom: 1rem;
+}
+
+.expand-btn {
+  background: var(--card-bg);
+  border: 1px dashed var(--primary);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.expand-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-style: solid;
+}
+
+.expand-text {
+  font-weight: 500;
+}
+
+.expand-icon {
+  font-size: 0.625rem;
+  transition: transform 0.2s ease;
+}
+
+.expand-icon {
+  transition: transform 0.2s ease;
+}
+
+.expand-btn.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.expanded-posts.hidden {
+  display: none;
+}
+
+
+
+@media (max-width: 768px) {
+  .timeline-container {
+    padding: 1rem 0;
+  }
+  
+  .months-container {
+    margin-left: 1rem;
+  }
+  
+  .timeline-item {
+    margin-left: 1rem;
+  }
+  
+  .timeline-card {
+    padding: 1.5rem;
+  }
+  
+  .card-main {
+    flex-direction: column;
+  }
+  
+  .timeline-image {
+    width: 100%;
+    height: 180px;
+  }
+  
+  .year-label {
+    font-size: 1.25rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .month-label {
+    font-size: 0.875rem;
+    padding: 0.2rem 0.5rem;
+  }
+}
+</style>
+
+<script is:inline>
+window.handleTimelineClick = function(e) {
+  // 处理月份展开按钮
+  const expandBtn = e.target.closest('.expand-btn');
+  if (expandBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const collapsedPosts = expandBtn.closest('.collapsed-posts');
+    const expandedPosts = collapsedPosts?.querySelector('.expanded-posts');
+    const icon = expandBtn.querySelector('.expand-icon');
+    const expandText = expandBtn.querySelector('.expand-text');
+    
+    if (expandedPosts && expandText && icon) {
+      if (expandedPosts.classList.contains('hidden')) {
+        expandedPosts.classList.remove('hidden');
+        expandBtn.classList.add('expanded');
+        expandText.textContent = expandText.textContent.replace('查看更多', '收起');
+        icon.textContent = '▲';
+      } else {
+        expandedPosts.classList.add('hidden');
+        expandBtn.classList.remove('expanded');
+        expandText.textContent = expandText.textContent.replace('收起', '查看更多');
+        icon.textContent = '▼';
+      }
+    }
+    return;
+  }
+  
+  // 处理年份展开按钮
+  const yearLabel = e.target.closest('.year-label.collapsed-year');
+  if (yearLabel) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const monthsContainer = yearLabel.closest('.year-section')?.querySelector('.months-container');
+    const icon = yearLabel.querySelector('.expand-icon');
+    
+    if (monthsContainer && icon) {
+      if (monthsContainer.classList.contains('hidden')) {
+        monthsContainer.classList.remove('hidden');
+        icon.textContent = '▲';
+      } else {
+        monthsContainer.classList.add('hidden');
+        icon.textContent = '▼';
+      }
+    }
+    return;
+  }
+};
+
+function bindTimelineEvents() {
+  document.removeEventListener('click', window.handleTimelineClick);
+  document.addEventListener('click', window.handleTimelineClick);
+}
+
+bindTimelineEvents();
+
+if (window.swup) {
+  window.swup.hooks.on('page:view', bindTimelineEvents);
+} else {
+  document.addEventListener('swup:enable', () => {
+    window.swup.hooks.on('page:view', bindTimelineEvents);
+  });
+}
+</script>
