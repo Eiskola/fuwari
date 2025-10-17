@@ -583,6 +583,12 @@ const setup = () => {
 		if (heightExtend) {
 			heightExtend.classList.remove('hidden')
 		}
+		
+		// 重置导航栏状态
+		const navbar = document.getElementById('navbar-wrapper');
+		if (navbar) {
+			navbar.classList.remove('navbar-hidden');
+		}
 	});
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
 		setTimeout(() => {
@@ -595,6 +601,12 @@ const setup = () => {
             const toc = document.getElementById('toc-wrapper');
             if (toc) {
                 toc.classList.remove('toc-not-ready')
+            }
+            
+            // 确保导航栏在页面转换后可见
+            const navbar = document.getElementById('navbar-wrapper');
+            if (navbar) {
+                navbar.classList.remove('navbar-hidden');
             }
         }, 200)
 	});
