@@ -1,5 +1,7 @@
 # About
-&emsp;&emsp;Hello everyone! This is **Eiskola**, a Master of computer science student from a university in China. 
+&emsp;&emsp;Hello everyone! This is **Eiskola**, a Master of computer science student from a university in China.
+
+::github{repo="Eiskola/Eiskola.github.io"}
 
 :::caution
 $$
